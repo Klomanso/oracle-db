@@ -1,269 +1,180 @@
-
-DROP TABLE IF EXISTS
-	species
-	, crops
-	, res_samples 
-	, res_procedures 
-	, "procedures" 
-	, research 
-	, customers 
-	, res_team 
-	, education 
-	, employees 
-	, titles
-	;
-
---
--- Name: crops; Type: TABLE; Schema: public; Owner: postgres
---
-
-CREATE TABLE crops (
-    brk_no varchar(10) PRIMARY KEY,
-    name varchar(80) NOT NULL,
-    spec_no int,
-    winter_hardiness boolean DEFAULT false,
-    pd_resistance boolean DEFAULT false,
-    yields boolean DEFAULT false,
-    rsr_result int,
-    notes text,
-    CONSTRAINT crops_brk_no_check CHECK (((brk_no)::text ~ '^\d{4}\Z'::text))
+alter table crops drop constraint crops_rsr_result_fkey;
+alter table crops drop constraint crops_spec_no_fkey;
+alter table employees drop constraint employees_education_fkey;
+alter table employees drop constraint employees_title_fkey;
+alter table research drop constraint research_ogrn_fkey;
+alter table research drop constraint research_lead_no_fkey;
+alter table res_procedures drop constraint res_procedures_proc_no_fkey;
+alter table res_procedures drop constraint res_procedures_res_id_fkey;
+alter table res_samples drop constraint res_samples_brk_no_fkey;
+alter table res_samples drop constraint res_samples_res_id_fkey;
+alter table res_team drop constraint res_team_contract_no_fkey;
+alter table res_team drop constraint res_team_res_id_fkey;
+----------------------------------------------------
+drop table INSPIRE.education;
+drop table INSPIRE.species;
+drop table INSPIRE.titles;
+drop table INSPIRE.procedures;
+drop table INSPIRE.customers;
+drop table INSPIRE.crops;
+drop table INSPIRE.employees;
+drop table INSPIRE.research;
+drop table res_procedures;
+drop table res_team;
+drop table res_samples;
+-- ---------------------------------------
+create table INSPIRE.education
+(
+    edu_no   Number generated always as identity primary key,
+    edu_type varchar2(80) not null
 );
-
-
---
--- Name: customers; Type: TABLE; Schema: public; Owner: postgres
---
-
-CREATE TABLE customers (
-    ogrn varchar(20) PRIMARY KEY,
-    title varchar(80) NOT NULL,
-    email varchar(50) NOT NULL,
+-- ---------------------------------------
+create table INSPIRE.species
+(
+    spec_no   Number generated always as identity primary key,
+    spec_name varchar2(50) not null
+);
+-- ---------------------------------------
+create table INSPIRE.titles
+(
+    title_no   Number generated always as identity primary key,
+    title_name varchar2(80) not null
+);
+-- ---------------------------------------
+create table INSPIRE.procedures
+(
+    proc_no     NUMBER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    proc_name   VARCHAR2(150) NOT NULL,
+    description CLOB
+);
+-- ---------------------------------------
+create table INSPIRE.customers
+(
+    ogrn         varchar2(20) PRIMARY KEY,
+    title        varchar(80) NOT NULL,
+    email        varchar(50) NOT NULL,
     phone_number varchar(50) NOT NULL,
-    CONSTRAINT ogrn_check CHECK (((ogrn)::text ~ '^\d{13}\Z'::text))
+    CONSTRAINT ogrn_check CHECK (regexp_like(ogrn, '^\d{13}\Z'))
 );
-
---
--- Name: education; Type: TABLE; Schema: public; Owner: postgres
---
-
-CREATE TABLE education (
-    edu_no serial PRIMARY KEY,
-    edu_type varchar(80) NOT NULL
+-- ---------------------------------------
+create table INSPIRE.crops
+(
+    brk_no           varchar2(10) PRIMARY KEY,
+    name             varchar(80) NOT NULL,
+    spec_no          int,
+    winter_hardiness char(1) check (winter_hardiness in ('Y', 'N')),
+    pd_resistance    char(1) check (pd_resistance in ('Y', 'N')),
+    yields           char(1) check (yields in ('Y', 'N')),
+    rsr_result       int,
+    notes            clob,
+    CONSTRAINT crops_brk_no_check CHECK (regexp_like(brk_no, '^\d{4}\Z'))
 );
-
-
---
--- Name: employees; Type: TABLE; Schema: public; Owner: postgres
---
-
-CREATE TABLE employees (
+-- ---------------------------------------
+create table INSPIRE.employees
+(
     contract_no varchar(10) PRIMARY KEY,
-    first_name varchar(80),
-    last_name varchar(80),
-    birth_date date NOT NULL,
-    hire_date date NOT NULL,
-    title int,
-    education int,
-    CONSTRAINT employees_birth_date_check CHECK ((age(now(), (birth_date)::timestamp with time zone) >= '18 years'::interval)),
-    CONSTRAINT employees_contract_no_check CHECK (((contract_no)::text ~ '^\d{7}\Z'::text))
+    first_name  varchar(80),
+    last_name   varchar(80),
+    birth_date  date NOT NULL,
+    hire_date   date NOT NULL,
+    title       int,
+    education   int,
+    CONSTRAINT employees_contract_no_check CHECK (regexp_like(contract_no, '^\d{7}\Z'))
 );
 
+CREATE OR REPLACE TRIGGER trg_check_employee_birth_date
+    BEFORE INSERT OR UPDATE of birth_date
+    ON employees
+    FOR EACH ROW
+BEGIN
 
---
--- Name: procedures; Type: TABLE; Schema: public; Owner: postgres
---
+    IF (trunc(months_between(sysdate, to_date(:NEW.birth_date, 'DD.MM.YYYY')) / 12) < 18)
+    THEN
+        RAISE_APPLICATION_ERROR(-20001, 'Birth Date must be > 18');
+    END IF;
 
-CREATE TABLE procedures (
-    proc_no serial PRIMARY KEY,
-    proc_name varchar(80) NOT NULL,
-    description text,
-    duration interval NOT NULL,
-    CONSTRAINT procedures_duration_check CHECK ((duration <= '7 days'::interval))
+END;
+-- ---------------------------------------
+
+create table INSPIRE.research
+(
+    res_id      NUMBER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    title       VARCHAR(150) NOT NULL,
+    ogrn        VARCHAR(20),
+    start_date  DATE         NOT NULL,
+    finish_date DATE         NOT NULL,
+    budget      NUMERIC(12, 2),
+    lead_no     varchar(10),
+    CONSTRAINT research_budget_check CHECK ((budget > (0)))
 );
 
---
--- Name: res_procedures; Type: TABLE; Schema: public; Owner: postgres
---
+CREATE OR REPLACE TRIGGER trg_check_research_duration
+    BEFORE INSERT OR UPDATE
+    ON research
+    FOR EACH ROW
+BEGIN
 
-CREATE TABLE res_procedures (
-    res_id int,
+    IF (months_between(nvl(:NEW.finish_date, :OLD.finish_date), nvl(:New.start_date, :OLD.start_date)) < 3) and
+       (months_between(nvl(:NEW.finish_date, :OLD.finish_date), nvl(:New.start_date, :OLD.start_date)) > 12)
+    THEN
+        RAISE_APPLICATION_ERROR(-20001, 'Research duration must be in [3,12] month''s period');
+    END IF;
+
+END;
+-- -----------------------------------
+CREATE TABLE res_procedures
+(
+    res_id  int,
     proc_no int,
     PRIMARY KEY (res_id, proc_no)
 );
 
---
--- Name: res_samples; Type: TABLE; Schema: public; Owner: postgres
---
-
-CREATE TABLE res_samples (
+CREATE TABLE res_samples
+(
     brk_no varchar(10),
     res_id int,
     PRIMARY KEY (brk_no, res_id)
 );
 
-
-
-
---
--- Name: res_team; Type: TABLE; Schema: public; Owner: postgres
---
-
-CREATE TABLE res_team (
-    res_id int,
+CREATE TABLE res_team
+(
+    res_id      int,
     contract_no varchar(10),
     PRIMARY KEY (res_id, contract_no)
 );
 
-
---
--- Name: research; Type: TABLE; Schema: public; Owner: postgres
---
-
-CREATE TABLE research (
-    res_id serial PRIMARY KEY,
-    title varchar(150) NOT NULL,
-    ogrn varchar(20),
-    from_date date NOT NULL,
-    finish_date date NOT NULL,
-    budget NUMERIC(12,2),
-    lead_no varchar(10),
-    CONSTRAINT research_budget_check CHECK ((budget > (0))),
-    CONSTRAINT research_duration_check CHECK (((age(finish_date, from_date) >= '3 mons'::interval)
-    	AND (age(finish_date, from_date) <= '1 year'::interval)))
-);
-
---
--- Name: species; Type: TABLE; Schema: public; Owner: postgres
---
-
-CREATE TABLE species (
-    spec_no serial PRIMARY KEY,
-    spec_name varchar(50) NOT NULL
-);
-
---
--- Name: titles; Type: TABLE; Schema: public; Owner: postgres
---
-
-CREATE TABLE titles (
-    title_no serial PRIMARY KEY,
-    title_name varchar(80) NOT NULL
-);
-
-
---
--- Name: crops crops_rsr_result_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
---
+ALTER TABLE crops
+    ADD CONSTRAINT crops_rsr_result_fkey FOREIGN KEY (rsr_result) REFERENCES INSPIRE.research (res_id) ON DELETE SET NULL;
 
 ALTER TABLE crops
-    ADD CONSTRAINT crops_rsr_result_fkey FOREIGN KEY (rsr_result) REFERENCES public.research(res_id) ON UPDATE CASCADE ON DELETE SET NULL;
-
-
---
--- Name: crops crops_spec_no_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE crops
-    ADD CONSTRAINT crops_spec_no_fkey FOREIGN KEY (spec_no) REFERENCES public.species(spec_no) ON UPDATE CASCADE ON DELETE SET NULL;
-
-
---
--- Name: employees employees_education_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
---
+    ADD CONSTRAINT crops_spec_no_fkey FOREIGN KEY (spec_no) REFERENCES INSPIRE.species (spec_no) ON DELETE SET NULL;
 
 ALTER TABLE employees
-    ADD CONSTRAINT employees_education_fkey FOREIGN KEY (education) REFERENCES public.education(edu_no) ON UPDATE CASCADE ON DELETE SET NULL;
-
-
---
--- Name: employees employees_title_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
---
+    ADD CONSTRAINT employees_education_fkey FOREIGN KEY (education) REFERENCES INSPIRE.education(edu_no) ON DELETE SET NULL;
 
 ALTER TABLE employees
-    ADD CONSTRAINT employees_title_fkey FOREIGN KEY (title) REFERENCES public.titles(title_no) ON UPDATE CASCADE ON DELETE SET NULL;
-
-
---
--- Name: res_procedures res_procedures_proc_no_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
---
+    ADD CONSTRAINT employees_title_fkey FOREIGN KEY (title) REFERENCES INSPIRE.titles(title_no) ON DELETE SET NULL;
 
 ALTER TABLE res_procedures
-    ADD CONSTRAINT res_procedures_proc_no_fkey FOREIGN KEY (proc_no) REFERENCES public.procedures(proc_no) ON UPDATE CASCADE ON DELETE SET NULL;
-
-
---
--- Name: res_procedures res_procedures_res_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
---
+    ADD CONSTRAINT res_procedures_proc_no_fkey FOREIGN KEY (proc_no) REFERENCES INSPIRE.procedures(proc_no) ON DELETE SET NULL;
 
 ALTER TABLE res_procedures
-    ADD CONSTRAINT res_procedures_res_id_fkey FOREIGN KEY (res_id) REFERENCES public.research(res_id) ON UPDATE CASCADE ON DELETE RESTRICT;
-
-
---
--- Name: res_samples res_samples_brk_no_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
---
+    ADD CONSTRAINT res_procedures_res_id_fkey FOREIGN KEY (res_id) REFERENCES INSPIRE.research(res_id);
 
 ALTER TABLE res_samples
-    ADD CONSTRAINT res_samples_brk_no_fkey FOREIGN KEY (brk_no) REFERENCES public.crops(brk_no) ON UPDATE CASCADE ON DELETE SET NULL;
-
-
---
--- Name: res_samples res_samples_res_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
---
+    ADD CONSTRAINT res_samples_brk_no_fkey FOREIGN KEY (brk_no) REFERENCES INSPIRE.crops(brk_no) ON DELETE SET NULL;
 
 ALTER TABLE res_samples
-    ADD CONSTRAINT res_samples_res_id_fkey FOREIGN KEY (res_id) REFERENCES public.research(res_id) ON UPDATE CASCADE ON DELETE RESTRICT;
-
-
---
--- Name: res_team res_team_contract_no_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
---
+    ADD CONSTRAINT res_samples_res_id_fkey FOREIGN KEY (res_id) REFERENCES INSPIRE.research(res_id);
 
 ALTER TABLE res_team
-    ADD CONSTRAINT res_team_contract_no_fkey FOREIGN KEY (contract_no) REFERENCES public.employees(contract_no) ON UPDATE CASCADE ON DELETE SET NULL;
-
-
---
--- Name: res_team res_team_res_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
---
+    ADD CONSTRAINT res_team_contract_no_fkey FOREIGN KEY (contract_no) REFERENCES INSPIRE.employees(contract_no) ON DELETE SET NULL;
 
 ALTER TABLE res_team
-    ADD CONSTRAINT res_team_res_id_fkey FOREIGN KEY (res_id) REFERENCES public.research(res_id) ON UPDATE CASCADE ON DELETE RESTRICT;
-
-
---
--- Name: research research_lead_no_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
---
+    ADD CONSTRAINT res_team_res_id_fkey FOREIGN KEY (res_id) REFERENCES INSPIRE.research(res_id);
 
 ALTER TABLE research
-    ADD CONSTRAINT research_lead_no_fkey FOREIGN KEY (lead_no) REFERENCES public.employees(contract_no) ON UPDATE CASCADE ON DELETE SET NULL;
-
-
---
--- Name: research research_ogrn_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
---
+    ADD CONSTRAINT research_lead_no_fkey FOREIGN KEY (lead_no) REFERENCES INSPIRE.employees(contract_no) ON DELETE SET NULL;
 
 ALTER TABLE research
-    ADD CONSTRAINT research_ogrn_fkey FOREIGN KEY (ogrn) REFERENCES public.customers(ogrn) ON UPDATE CASCADE ON DELETE SET NULL;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    ADD CONSTRAINT research_ogrn_fkey FOREIGN KEY (ogrn) REFERENCES INSPIRE.customers(ogrn) ON DELETE SET NULL;
