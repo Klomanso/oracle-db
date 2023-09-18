@@ -88,7 +88,7 @@ CREATE OR REPLACE TRIGGER trg_check_employee_birth_date
     FOR EACH ROW
 BEGIN
 
-    IF (trunc(months_between(sysdate, to_date(:NEW.birth_date, 'DD.MM.YYYY')) / 12) < 18)
+    IF (trunc(months_between(sysdate, :NEW.birth_date) / 12) < 18)
     THEN
         RAISE_APPLICATION_ERROR(-20001, 'Birth Date must be > 18');
     END IF;
@@ -108,6 +108,7 @@ create table INSPIRE.research
     CONSTRAINT research_budget_check CHECK ((budget > (0)))
 );
 
+/*
 CREATE OR REPLACE TRIGGER trg_check_research_duration
     BEFORE INSERT OR UPDATE
     ON research
@@ -121,6 +122,7 @@ BEGIN
     END IF;
 
 END;
+*/
 -- -----------------------------------
 CREATE TABLE res_procedures
 (
