@@ -1,3 +1,16 @@
+ALTER TABLE CROPS DROP CONSTRAINT CROPS_RSR_RESULT_FKEY;
+ALTER TABLE CROPS DROP CONSTRAINT CROPS_SPEC_NO_FKEY;
+ALTER TABLE EMPLOYEES DROP CONSTRAINT EMPLOYEES_EDUCATION_FKEY;
+ALTER TABLE EMPLOYEES DROP CONSTRAINT EMPLOYEES_TITLE_FKEY;
+ALTER TABLE RESEARCH DROP CONSTRAINT RESEARCH_OGRN_FKEY;
+ALTER TABLE RESEARCH DROP CONSTRAINT RESEARCH_LEAD_NO_FKEY;
+ALTER TABLE RES_PROCEDURES DROP CONSTRAINT RES_PROCEDURES_PROC_NO_FKEY;
+ALTER TABLE RES_PROCEDURES DROP CONSTRAINT RES_PROCEDURES_RES_ID_FKEY;
+ALTER TABLE RES_SAMPLES DROP CONSTRAINT RES_SAMPLES_BRK_NO_FKEY;
+ALTER TABLE RES_SAMPLES DROP CONSTRAINT RES_SAMPLES_RES_ID_FKEY;
+ALTER TABLE RES_TEAM DROP CONSTRAINT RES_TEAM_CONTRACT_NO_FKEY;
+ALTER TABLE RES_TEAM DROP CONSTRAINT RES_TEAM_RES_ID_FKEY;
+----------------------------------------------------------
 TRUNCATE TABLE TITLES;
 TRUNCATE TABLE EDUCATION;
 TRUNCATE TABLE SPECIES;
@@ -10,11 +23,36 @@ TRUNCATE TABLE RES_TEAM;
 TRUNCATE TABLE RES_SAMPLES;
 TRUNCATE TABLE RES_PROCEDURES;
 ----------------------------------------------------------
-alter table TITLES modify (TITLE_NO generated as identity (start with 1));
-alter table EDUCATION modify (EDU_NO generated as identity (start with 1));
-alter table SPECIES modify (SPEC_NO generated as identity (start with 1));
-alter table PROCEDURES modify (PROC_NO generated as identity (start with 1));
-alter table RESEARCH modify (RES_ID generated as identity (start with 1));
+ALTER TABLE crops
+    ADD CONSTRAINT crops_rsr_result_fkey FOREIGN KEY (rsr_result) REFERENCES INSPIRE.research (res_id) ON DELETE SET NULL;
+ALTER TABLE crops
+    ADD CONSTRAINT crops_spec_no_fkey FOREIGN KEY (spec_no) REFERENCES INSPIRE.species (spec_no) ON DELETE SET NULL;
+ALTER TABLE employees
+    ADD CONSTRAINT employees_education_fkey FOREIGN KEY (education) REFERENCES INSPIRE.education(edu_no) ON DELETE SET NULL;
+ALTER TABLE employees
+    ADD CONSTRAINT employees_title_fkey FOREIGN KEY (title) REFERENCES INSPIRE.titles(title_no) ON DELETE SET NULL;
+ALTER TABLE res_procedures
+    ADD CONSTRAINT res_procedures_proc_no_fkey FOREIGN KEY (proc_no) REFERENCES INSPIRE.procedures(proc_no) ON DELETE SET NULL;
+ALTER TABLE res_procedures
+    ADD CONSTRAINT res_procedures_res_id_fkey FOREIGN KEY (res_id) REFERENCES INSPIRE.research(res_id);
+ALTER TABLE res_samples
+    ADD CONSTRAINT res_samples_brk_no_fkey FOREIGN KEY (brk_no) REFERENCES INSPIRE.crops(brk_no) ON DELETE SET NULL;
+ALTER TABLE res_samples
+    ADD CONSTRAINT res_samples_res_id_fkey FOREIGN KEY (res_id) REFERENCES INSPIRE.research(res_id);
+ALTER TABLE res_team
+    ADD CONSTRAINT res_team_contract_no_fkey FOREIGN KEY (contract_no) REFERENCES INSPIRE.employees(contract_no) ON DELETE SET NULL;
+ALTER TABLE res_team
+    ADD CONSTRAINT res_team_res_id_fkey FOREIGN KEY (res_id) REFERENCES INSPIRE.research(res_id);
+ALTER TABLE research
+    ADD CONSTRAINT research_lead_no_fkey FOREIGN KEY (lead_no) REFERENCES INSPIRE.employees(contract_no) ON DELETE SET NULL;
+ALTER TABLE research
+    ADD CONSTRAINT research_ogrn_fkey FOREIGN KEY (ogrn) REFERENCES INSPIRE.customers(ogrn) ON DELETE SET NULL;
+----------------------------------------------------------
+alter table TITLES modify (TITLE_NO generated as identity (start with 1 increment by 1 nocache));
+alter table EDUCATION modify (EDU_NO generated as identity (start with 1 increment by 1 nocache));
+alter table SPECIES modify (SPEC_NO generated as identity (start with 1 increment by 1 nocache));
+alter table PROCEDURES modify (PROC_NO generated as identity (start with 1 increment by 1 nocache));
+alter table RESEARCH modify (RES_ID generated as identity (start with 1 increment by 1 nocache));
 ----------------------------------------------------------
 BEGIN
     INSERT INTO species (spec_name) values ('яблоня');

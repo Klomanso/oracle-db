@@ -25,25 +25,25 @@ drop table res_samples;
 -- ---------------------------------------
 create table INSPIRE.education
 (
-    edu_no   Number generated always as identity primary key,
+    edu_no   Number generated always as identity (start with 1 increment by 1 nocache) primary key,
     edu_type varchar2(80) not null
 );
 -- ---------------------------------------
 create table INSPIRE.species
 (
-    spec_no   Number generated always as identity primary key,
+    spec_no   Number generated always as identity (start with 1 increment by 1 nocache) primary key,
     spec_name varchar2(50) not null
 );
 -- ---------------------------------------
 create table INSPIRE.titles
 (
-    title_no   Number generated always as identity primary key,
+    title_no   Number generated always as identity (start with 1 increment by 1 nocache) primary key,
     title_name varchar2(80) not null
 );
 -- ---------------------------------------
 create table INSPIRE.procedures
 (
-    proc_no     NUMBER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    proc_no     NUMBER GENERATED ALWAYS AS IDENTITY (START WITH 1 INCREMENT BY 1 NOCACHE) PRIMARY KEY,
     proc_name   VARCHAR2(150) NOT NULL,
     description CLOB
 );
@@ -98,7 +98,7 @@ END;
 
 create table INSPIRE.research
 (
-    res_id      NUMBER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    res_id      NUMBER GENERATED ALWAYS AS IDENTITY (START WITH 1 INCREMENT BY 1 NOCACHE) PRIMARY KEY,
     title       VARCHAR(150) NOT NULL,
     ogrn        VARCHAR(20),
     start_date  DATE         NOT NULL,
@@ -180,3 +180,7 @@ ALTER TABLE research
 
 ALTER TABLE research
     ADD CONSTRAINT research_ogrn_fkey FOREIGN KEY (ogrn) REFERENCES INSPIRE.customers(ogrn) ON DELETE SET NULL;
+
+CREATE INDEX test_idx ON employees(first_name, last_name);
+
+CREATE OR REPLACE SYNONYM workers FOR inspire.employees;
