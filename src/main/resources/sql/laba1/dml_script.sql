@@ -373,8 +373,6 @@ begin
     VALUES ('0009', 10);
 end;
 
-select * from PROCEDURES;
-
 begin
     INSERT INTO res_procedures (res_id, proc_no)
     VALUES (1, 3);

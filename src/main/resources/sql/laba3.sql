@@ -1,23 +1,37 @@
--- 1) Горизонтальное представление
--- Выбрать сотрудников, должностей
--- которых больше всего в интституте
-CREATE OR REPLACE VIEW max_title_emp AS
-SELECT *
-FROM employees
-WHERE title IN (WITH title_count AS (SELECT title, count(*) num
-                                     FROM employees
-                                     GROUP BY title)
-                SELECT title
-                FROM title_count
-                WHERE num = (SELECT max(num) FROM title_count))
-WITH CHECK OPTION CONSTRAINT max_check;
+-- 1) Горизонтальное обновляемое представление
+-- Выбрать сотрудников, с высшим образованием
+CREATE OR REPLACE VIEW higher_edu AS
+SELECT e.contract_no,
+       e.hire_date,
+       e.first_name,
+       e.last_name,
+       e.birth_date,
+       e.education
+FROM employees e
+WHERE e.education = 4
+WITH CHECK OPTION;
 -----------
 SELECT *
-FROM MAX_TITLE_EMP;
------------
-INSERT INTO max_title_emp (contract_no,
-                           first_name, last_name, birth_date,
-                           hire_date, title, education)
+FROM higher_edu;
+------------- GOOD INSERT -------------
+INSERT INTO higher_edu (contract_no,
+                        first_name, last_name, birth_date,
+                        hire_date, education)
+VALUES (
+           -- random 7 digits id
+           to_char(floor(DBMS_RANDOM.VALUE(1000000, 9999999))),
+           -- first, last name
+           'TEST', 'USER',
+           -- birth_date
+           to_date('1986-09-12', 'YYYY-MM-DD'),
+           -- hire_date
+           to_date('2003-04-26', 'YYYY-MM-DD'),
+           -- education
+           1);
+------------- BAD INSERT -------------
+INSERT INTO higher_edu (contract_no,
+                        first_name, last_name, birth_date,
+                        hire_date, education)
 VALUES (
            -- random 7 digits id
            to_char(floor(DBMS_RANDOM.VALUE(1000000, 9999999))),
@@ -27,8 +41,8 @@ VALUES (
            to_date('1986-09-12', 'YYYY-MM-DD'),
            -- hire_date
            to_date('2003-12-26', 'YYYY-MM-DD'),
-           -- title, education
-           floor(DBMS_RANDOM.VALUE(1, 5)), 1);
+           -- education
+           4);
 ---------------------------------------------------------------------
 -- 2) Работа с данными только в рабочие дни
 CREATE OR REPLACE VIEW working_days_spec_view AS
@@ -40,23 +54,23 @@ WITH CHECK OPTION;
 --------------------
 SELECT *
 FROM WORKING_DAYS_SPEC_VIEW;
---------------------
-INSERT INTO working_days_spec_view (SPEC_NAME)
-VALUES ('fsd');
 ---------------------------------------------------------------------
 -- 3) Вертикальное необновляемое представление
 CREATE OR REPLACE VIEW emp_view AS
-SELECT concat(e.first_name, concat(' ', e.last_name)) full_name,
+SELECT DISTINCT e.first_name,
+       e.last_name,
        t.title_name,
-       ed.edu_type
+       ed.edu_type,
+       extract(MONTH from e.hire_date) hire_month
 FROM employees e
-         INNER JOIN titles t ON e.title = t.title_no
+         LEFT JOIN titles t ON e.title = t.title_no
          INNER JOIN education ed ON ed.edu_no = e.education
-WITH READ ONLY;
+WHERE extract(MONTH FROM e.hire_date) = 4;
 -----------------------
 SELECT *
 FROM emp_view;
 -----------------------
-INSERT INTO emp_view (full_name, title_name, edu_type)
-VALUES ('a', 'b', 'c');
+DELETE
+FROM emp_view
+WHERE edu_type = 'среднее';
 ---------------------------------------------------------------------
