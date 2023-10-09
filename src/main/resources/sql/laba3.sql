@@ -13,7 +13,7 @@ WITH CHECK OPTION;
 -----------
 SELECT *
 FROM higher_edu;
-------------- GOOD INSERT -------------
+------------- BAD INSERT -------------
 INSERT INTO higher_edu (contract_no,
                         first_name, last_name, birth_date,
                         hire_date, education)
@@ -28,7 +28,7 @@ VALUES (
            to_date('2003-04-26', 'YYYY-MM-DD'),
            -- education
            1);
-------------- BAD INSERT -------------
+------------- GOOD INSERT -------------
 INSERT INTO higher_edu (contract_no,
                         first_name, last_name, birth_date,
                         hire_date, education)
