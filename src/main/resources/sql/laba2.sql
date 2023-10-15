@@ -34,6 +34,7 @@ ORDER BY full_name;
 -- (Вывести итоговый бюджет исследований в которых в качестве
 -- образца использовалась 'вишня')
 SELECT sum(r.budget) cherry_full_budget
+     , s.spec_name
 FROM species s
          NATURAL JOIN crops c
          INNER JOIN res_samples rs USING (BRK_no)
@@ -42,13 +43,21 @@ WHERE s.spec_name LIKE '%вишня%'
 GROUP BY s.spec_name;
 ------------------------------------
 -- 5.Итоговый запрос с использованием группировки по части поля с типом дата
--- (Вывести  общее количество исследований, которые были завершены
--- в первом квартале года)
-SELECT sum(res) total_first_quarter_res_amount
-FROM (SELECT count(*) res
-      FROM research r
-      WHERE extract(MONTH FROM r.finish_date) BETWEEN 1 AND 3
-      GROUP BY extract(MONTH FROM r.finish_date));
+-- (Вывести количество количество исследований по месяцам первого квартала)
+WITH first_quarter_count AS (SELECT extract(month from r.finish_date) res_month
+                                  , count(*)                          res
+                             FROM research r
+                             WHERE extract(MONTH FROM r.finish_date) BETWEEN 1 AND 3
+                             GROUP BY extract(MONTH FROM r.finish_date)),
+     first_quarter_months AS (SELECT rownum AS mon
+                              FROM dual
+                              CONNECT BY level <= 3)
+SELECT to_char(to_date(fqm.mon, 'MM'), 'Month') quarter_month
+     , nvl(fqc.res, '0')                        res_amount
+FROM first_quarter_months fqm
+         LEFT JOIN first_quarter_count fqc
+                   ON fqm.mon = fqc.res_month
+ORDER BY fqm.mon;
 ------------------------------------
 -- 6.Запрос с внешним соединением(LEFT-JOIN)
 -- (Вывести имена и должности сотрудников, которые ни разу
@@ -86,13 +95,13 @@ WHERE r.ogrn IN (SELECT ogrn
                  WHERE title LIKE '%ОАО%');
 ------------------------------------
 -- 9.Запрос с использованием предиката (ANY) в подзапросе
--- (Вывести имена сотрудников, которые были руководителями
--- исследований, проводимых после 2017 года)
-SELECT (e.first_name || ' ' || e.last_name) full_name, e.CONTRACT_NO
-FROM EMPLOYEES e
-WHERE e.contract_no = ANY (SELECT lead_no
-                           FROM research
-                           WHERE extract(YEAR FROM start_date) > 2017);
+-- (Вывести имена сотрудников, образование которых
+--  соответствует образованию руководителей проводивших исследования)
+SELECT e.contract_no, (e.first_name || ' ' || e.last_name) full_name
+FROM employees e
+WHERE e.education > ANY (SELECT e.education
+                         FROM EMPLOYEES e
+                                  INNER JOIN research r ON e.contract_no = r.lead_no);
 ------------------------------------
 -- 10.Запрос с использованием предиката (EXISTS) в подзапросе
 -- (Вывести названия и бюджет успешных исследований)

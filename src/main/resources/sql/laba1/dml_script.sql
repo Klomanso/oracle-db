@@ -271,17 +271,18 @@ begin
             to_date('2013-04-20', 'YYYY-MM-DD'), to_date('2013-09-10', 'YYYY-MM-DD'), 3456,
             '1750693');
 end;
-BEGIN
-    INSERT INTO crops (brk_no, name, spec_no, winter_hardiness, pd_resistance, yields, rsr_result, notes)
+
+INSERT ALL
+    INTO crops (brk_no, name, spec_no, winter_hardiness, pd_resistance, yields, rsr_result, notes)
     VALUES ('0008', 'Аврора', 8, 'N', 'Y', 'N', 3,
-            'Сорт выведен в Северо-Кавказском зональном научно-исследовательском институте садоводства и виноградарства (г. Краснодар)');
-    INSERT INTO crops (brk_no, name, spec_no, winter_hardiness, pd_resistance, yields, rsr_result, notes)
+            'Сорт выведен в Северо-Кавказском зональном научно-исследовательском институте садоводства и виноградарства (г. Краснодар)')
+    INTO crops (brk_no, name, spec_no, winter_hardiness, pd_resistance, yields, rsr_result, notes)
     VALUES ('0009', 'Айсберг', 9, 'N', 'Y', 'N', 8,
-            ' Деревья небольших размеров (3 м), сила роста умеренная. Однолетние побеги сильно ветвистые. Цветки крупные 3,5-4 см, белые.');
-    INSERT INTO crops (brk_no, name, spec_no, winter_hardiness, pd_resistance, yields, rsr_result, notes)
+            ' Деревья небольших размеров (3 м), сила роста умеренная. Однолетние побеги сильно ветвистые. Цветки крупные 3,5-4 см, белые.')
+    INTO crops (brk_no, name, spec_no, winter_hardiness, pd_resistance, yields, rsr_result, notes)
     VALUES ('0010', 'Мавра', 10, 'Y', 'Y', 'Y', 1,
-            'Гибрид от скрещивания формы № 1-5-13 черемухи виргинской с формой № 5-28-10 черемухи кистевой. Оригинатор – Центральный сибирский ботанический сад');
-END;
+            'Гибрид от скрещивания формы № 1-5-13 черемухи виргинской с формой № 5-28-10 черемухи кистевой. Оригинатор – Центральный сибирский ботанический сад')
+SELECT * FROM dual;
 
 begin
     INSERT INTO res_team (res_id, contract_no)

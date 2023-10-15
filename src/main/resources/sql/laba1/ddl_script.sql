@@ -181,6 +181,6 @@ ALTER TABLE research
 ALTER TABLE research
     ADD CONSTRAINT research_ogrn_fkey FOREIGN KEY (ogrn) REFERENCES INSPIRE.customers(ogrn) ON DELETE SET NULL;
 
-CREATE INDEX test_idx ON employees(first_name, last_name);
+CREATE INDEX test_idx ON customers(email);
 
 CREATE OR REPLACE SYNONYM workers FOR inspire.employees;

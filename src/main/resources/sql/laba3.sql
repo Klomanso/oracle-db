@@ -56,21 +56,31 @@ SELECT *
 FROM WORKING_DAYS_SPEC_VIEW;
 ---------------------------------------------------------------------
 -- 3) Вертикальное необновляемое представление
-CREATE OR REPLACE VIEW emp_view AS
-SELECT DISTINCT e.first_name,
-       e.last_name,
-       t.title_name,
-       ed.edu_type,
-       extract(MONTH from e.hire_date) hire_month
-FROM employees e
-         LEFT JOIN titles t ON e.title = t.title_no
-         INNER JOIN education ed ON ed.edu_no = e.education
-WHERE extract(MONTH FROM e.hire_date) = 4;
+-- (Вывести названия базовых культур вместе с производными культурами,
+-- a также названия и периоды проведения всех исследований)
+CREATE OR REPLACE VIEW res_result AS
+SELECT coalesce(c.name, '<NO RESULT>')  crop_name
+     , coalesce(r.title, '<BASE CROP>') research_title
+     , CASE
+           WHEN r.start_date IS NULL AND r.finish_date IS NULL THEN '<NO PERIOD>'
+           ELSE concat(to_char(r.start_date, 'DD.MM.YYYY'), concat(' -- ', to_char(r.finish_date, 'DD.MM.YYYY')))
+    END
+                                        research_period
+FROM research r
+         FULL OUTER JOIN CROPS c ON r.res_id = c.rsr_result
+ORDER BY crop_name DESC;
 -----------------------
 SELECT *
-FROM emp_view;
+FROM res_result;
+-----------------------
+UPDATE res_result
+SET crop_name = 'TEST_CROP_NAME'
+WHERE crop_name = 'Алексий';
+-----------------------
+INSERT INTO res_result (crop_name, research_title, research_period)
+VALUES ('TEST_NAME', '<BASE CROP>', '03.04.2022 -- 08.09.2022');
 -----------------------
 DELETE
-FROM emp_view
-WHERE edu_type = 'среднее';
+FROM res_result
+WHERE crop_name = 'Алексий';
 ---------------------------------------------------------------------
