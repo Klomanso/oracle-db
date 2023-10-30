@@ -32,7 +32,7 @@ create table INSPIRE.education
 create table INSPIRE.species
 (
     spec_no   Number generated always as identity (start with 1 increment by 1 nocache) primary key,
-    spec_name varchar2(50) not null
+    spec_name varchar2(50) not null unique
 );
 -- ---------------------------------------
 create table INSPIRE.titles
@@ -82,18 +82,6 @@ create table INSPIRE.employees
     CONSTRAINT employees_contract_no_check CHECK (regexp_like(contract_no, '^\d{7}\Z'))
 );
 
-CREATE OR REPLACE TRIGGER trg_check_employee_birth_date
-    BEFORE INSERT OR UPDATE of birth_date
-    ON employees
-    FOR EACH ROW
-BEGIN
-
-    IF (trunc(months_between(sysdate, :NEW.birth_date) / 12) < 18)
-    THEN
-        RAISE_APPLICATION_ERROR(-20001, 'Birth Date must be > 18');
-    END IF;
-
-END;
 -- ---------------------------------------
 
 create table INSPIRE.research
@@ -102,27 +90,12 @@ create table INSPIRE.research
     title       VARCHAR(150) NOT NULL,
     ogrn        VARCHAR(20),
     start_date  DATE         NOT NULL,
-    finish_date DATE         NOT NULL,
+    finish_date DATE,
     budget      NUMERIC(12, 2),
     lead_no     varchar(10),
     CONSTRAINT research_budget_check CHECK ((budget > (0)))
 );
 
-/*
-CREATE OR REPLACE TRIGGER trg_check_research_duration
-    BEFORE INSERT OR UPDATE
-    ON research
-    FOR EACH ROW
-BEGIN
-
-    IF (months_between(nvl(:NEW.finish_date, :OLD.finish_date), nvl(:New.start_date, :OLD.start_date)) < 3) and
-       (months_between(nvl(:NEW.finish_date, :OLD.finish_date), nvl(:New.start_date, :OLD.start_date)) > 12)
-    THEN
-        RAISE_APPLICATION_ERROR(-20001, 'Research duration must be in [3,12] month''s period');
-    END IF;
-
-END;
-*/
 -- -----------------------------------
 CREATE TABLE res_procedures
 (

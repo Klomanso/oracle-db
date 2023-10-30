@@ -270,17 +270,29 @@ begin
     VALUES ('Выведение сортов смородины позднего срока созревания', '1125139845201',
             to_date('2013-04-20', 'YYYY-MM-DD'), to_date('2013-09-10', 'YYYY-MM-DD'), 3456,
             '1750693');
+    INSERT INTO research (title, ogrn, start_date, finish_date, budget, lead_no)
+    VALUES ('Сравнительная оценка сортов вишни', NULL, to_date('2010-04-13', 'YYYY-MM-DD'),
+            to_date('2010-09-09', 'YYYY-MM-DD'), 10321, NULL);
+    INSERT INTO research (title, ogrn, start_date, finish_date, budget, lead_no)
+    VALUES ('Сравнительная оценка сортов ябони', NULL, to_date('2018-04-03', 'YYYY-MM-DD'),
+            to_date('2018-09-08', 'YYYY-MM-DD'), 9245, NULL);
+    INSERT INTO research (title, ogrn, start_date, finish_date, budget, lead_no)
+    VALUES ('Сравнительная оценка сортов сливы', NULL, to_date('2020-01-03', 'YYYY-MM-DD'),
+            to_date('2020-03-08', 'YYYY-MM-DD'), 4432, NULL);
+    INSERT INTO research (title, ogrn, start_date, finish_date, budget, lead_no)
+    VALUES ('Сравнительная оценка сортов груши', NULL, to_date('2020-04-03', 'YYYY-MM-DD'),
+            to_date('2020-09-08', 'YYYY-MM-DD'), 10810, NULL);
 end;
 
 INSERT ALL
     INTO crops (brk_no, name, spec_no, winter_hardiness, pd_resistance, yields, rsr_result, notes)
-    VALUES ('0008', 'Аврора', 8, 'N', 'Y', 'N', 3,
+    VALUES ('0012', 'Аврора1', 8, 'N', 'Y', 'N', 3,
             'Сорт выведен в Северо-Кавказском зональном научно-исследовательском институте садоводства и виноградарства (г. Краснодар)')
     INTO crops (brk_no, name, spec_no, winter_hardiness, pd_resistance, yields, rsr_result, notes)
-    VALUES ('0009', 'Айсберг', 9, 'N', 'Y', 'N', 8,
+    VALUES ('0013', 'Айсберг1', 9, 'N', 'Y', 'N', 8,
             ' Деревья небольших размеров (3 м), сила роста умеренная. Однолетние побеги сильно ветвистые. Цветки крупные 3,5-4 см, белые.')
     INTO crops (brk_no, name, spec_no, winter_hardiness, pd_resistance, yields, rsr_result, notes)
-    VALUES ('0010', 'Мавра', 10, 'Y', 'Y', 'Y', 1,
+    VALUES ('0015', 'Мавра1', 10, 'Y', 'Y', 'Y', 1,
             'Гибрид от скрещивания формы № 1-5-13 черемухи виргинской с формой № 5-28-10 черемухи кистевой. Оригинатор – Центральный сибирский ботанический сад')
 SELECT * FROM dual;
 

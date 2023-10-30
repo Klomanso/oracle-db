@@ -58,29 +58,29 @@ FROM WORKING_DAYS_SPEC_VIEW;
 -- 3) Вертикальное необновляемое представление
 -- (Вывести названия базовых культур вместе с производными культурами,
 -- a также названия и периоды проведения всех исследований)
-CREATE OR REPLACE VIEW res_result AS
-SELECT coalesce(c.name, '<NO RESULT>')  crop_name
-     , coalesce(r.title, '<BASE CROP>') research_title
-     , CASE
-           WHEN r.start_date IS NULL AND r.finish_date IS NULL THEN '<NO PERIOD>'
-           ELSE concat(to_char(r.start_date, 'DD.MM.YYYY'), concat(' -- ', to_char(r.finish_date, 'DD.MM.YYYY')))
-    END
-                                        research_period
+CREATE OR REPLACE VIEW res_customers AS
+SELECT r.TITLE,
+       r.BUDGET,
+       r.START_DATE,
+       r.FINISH_DATE,
+       c.TITLE        customer_title,
+       c.EMAIL        customer_email,
+       c.PHONE_NUMBER customer_number
 FROM research r
-         FULL OUTER JOIN CROPS c ON r.res_id = c.rsr_result
-ORDER BY crop_name DESC;
+         FULL OUTER JOIN CUSTOMERS c ON r.OGRN = c.OGRN;
 -----------------------
 SELECT *
-FROM res_result;
+FROM res_customers;
 -----------------------
-UPDATE res_result
-SET crop_name = 'TEST_CROP_NAME'
-WHERE crop_name = 'Алексий';
+UPDATE res_customers
+SET BUDGET = 8888
+WHERE TITLE = 'Селекция урожайных сортов персика';
 -----------------------
-INSERT INTO res_result (crop_name, research_title, research_period)
-VALUES ('TEST_NAME', '<BASE CROP>', '03.04.2022 -- 08.09.2022');
+INSERT INTO res_customers (TITLE, BUDGET, START_DATE, FINISH_DATE, customer_title, customer_email, customer_number)
+VALUES ('research2', 1333, to_date('2012-04-22', 'YYYY-MM-DD'), to_date('2013-01-22', 'YYYY-MM-DD'),
+        'TEST_TRIGGER_CUSTOMER', 'test@mail.by', '+375455723239');
 -----------------------
 DELETE
-FROM res_result
-WHERE crop_name = 'Алексий';
+FROM res_customers
+WHERE TITLE = 'Селекция урожайных сортов персика';
 ---------------------------------------------------------------------
