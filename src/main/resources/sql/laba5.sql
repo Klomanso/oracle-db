@@ -259,9 +259,73 @@ BEGIN
         );
 END;
 -------------------------------------------FINISH_TASK_4----------------------------------------------------------------
--- todo: Исправить: у всех поменять species
 -------------------------------------------TASK_5-----------------------------------------------------------------------
+-- good example of compound trigger (use it)
 CREATE OR REPLACE TRIGGER inspire.crops_update_trg
+    FOR UPDATE OF winter_hardiness, pd_resistance, yields
+    ON crops
+    COMPOUND TRIGGER
+    TYPE r_crop_type IS RECORD
+                        (
+                            crop_id      crops.brk_no%TYPE,
+                            spec_id      crops.spec_no%TYPE,
+                            wh_new_value crops.WINTER_HARDINESS%TYPE,
+                            pd_new_value crops.PD_RESISTANCE%TYPE,
+                            yd_new_value crops.YIELDS%TYPE
+                        );
+
+    TYPE t_crop_type IS TABLE OF r_crop_type INDEX BY pls_integer;
+
+    t_crop t_crop_type;
+    l_fixed_info constant varchar2(30) := 'update from trigger';
+
+AFTER EACH ROW IS
+    l_info varchar2(30);
+BEGIN
+    dbms_application_info.read_client_info(l_info);
+    IF l_info IS NULL OR l_info != l_fixed_info THEN
+        t_crop(t_crop.COUNT + 1).crop_id := :OLD.BRK_NO;
+        t_crop(t_crop.COUNT).spec_id := :OLD.spec_no;
+        IF UPDATING ('WINTER_HARDINESS') THEN
+            t_crop(t_crop.COUNT).wh_new_value := :NEW.WINTER_HARDINESS;
+        END IF;
+        IF UPDATING ('PD_RESISTANCE') THEN
+            t_crop(t_crop.COUNT).pd_new_value := :NEW.PD_RESISTANCE;
+        END IF;
+        IF UPDATING ('YIELDS') THEN
+            t_crop(t_crop.COUNT).yd_new_value := :NEW.YIELDS;
+        END IF;
+    END IF;
+END AFTER EACH ROW;
+    AFTER STATEMENT IS
+        l_old_info varchar2(30);
+    BEGIN
+        dbms_application_info.read_client_info(l_old_info);
+        dbms_application_info.set_client_info(l_fixed_info);
+        FOR idx IN 1..t_crop.COUNT
+            LOOP
+                IF t_crop(idx).wh_new_value IS NOT NULL THEN
+                    UPDATE crops
+                    SET WINTER_HARDINESS = t_crop(idx).wh_new_value
+                    WHERE spec_no = t_crop(idx).spec_id;
+                END IF;
+                IF t_crop(idx).pd_new_value IS NOT NULL THEN
+                    UPDATE crops
+                    SET PD_RESISTANCE = t_crop(idx).pd_new_value
+                    WHERE spec_no = t_crop(idx).spec_id;
+                END IF;
+                IF t_crop(idx).yd_new_value IS NOT NULL THEN
+                    UPDATE crops
+                    SET YIELDS = t_crop(idx).yd_new_value
+                    WHERE spec_no = t_crop(idx).spec_id;
+                END IF;
+            END LOOP;
+        dbms_application_info.set_client_info(l_old_info);
+    END AFTER STATEMENT;
+    END crops_update_trg;
+
+-- bad example of compound trigger (do not use)
+CREATE OR REPLACE TRIGGER inspire.crops_update_trg2
     FOR UPDATE OF winter_hardiness, pd_resistance, yields
     ON crops
     COMPOUND TRIGGER
@@ -310,9 +374,8 @@ END AFTER EACH ROW;
                 WHERE brk_no = t_crop(idx).crop_id;
             END LOOP;
     END AFTER STATEMENT;
-    END crops_update_trg;
+    END crops_update_trg2;
 -------------------------------------------FINISH_TASK_5----------------------------------------------------------------
--- todo: доделать instead of: update, delete
 -------------------------------------------TASK_6-----------------------------------------------------------------------
 CREATE OR REPLACE TRIGGER inspire.update_view_trg
     INSTEAD OF INSERT OR UPDATE OR DELETE
@@ -328,9 +391,30 @@ BEGIN
         INSERT INTO research (TITLE, OGRN, START_DATE, FINISH_DATE, BUDGET, LEAD_NO)
         VALUES (:NEW.title, rand_customer_id, :NEW.start_date, :NEW.finish_date, :NEW.budget, null);
     ELSIF UPDATING THEN
-        RAISE_APPLICATION_ERROR(-20007, 'Unable to update records from this view');
+        IF UPDATING ('TITLE') THEN
+            UPDATE research set title = :NEW.title where title = :OLD.title;
+        END IF;
+        IF UPDATING ('BUDGET') THEN
+            UPDATE research set budget = :NEW.budget where budget = :OLD.budget;
+        END IF;
+        IF UPDATING ('CUSTOMER_TITLE') THEN
+            UPDATE customers c set c.title = :NEW.CUSTOMER_TITLE where c.title = :OLD.CUSTOMER_TITLE;
+        END IF;
+        IF UPDATING ('CUSTOMER_EMAIL') THEN
+            UPDATE customers c set c.EMAIL = :NEW.CUSTOMER_EMAIL where c.EMAIL = :OLD.CUSTOMER_EMAIL;
+        END IF;
+        IF UPDATING ('CUSTOMER_NUMBER') THEN
+            UPDATE customers c set c.PHONE_NUMBER = :NEW.CUSTOMER_NUMBER where c.PHONE_NUMBER = :OLD.CUSTOMER_NUMBER;
+        END IF;
+        IF UPDATING ('START_DATE') THEN
+            RAISE_APPLICATION_ERROR(-20007, 'Unable to update START_DATE in this view');
+        END IF;
+        IF UPDATING ('FINISH_DATE') THEN
+            RAISE_APPLICATION_ERROR(-20007, 'Unable to update FINISH_DATE in this view');
+        END IF;
     ELSIF DELETING THEN
-        RAISE_APPLICATION_ERROR(-20008, 'Unable to delete records from this view');
+        DELETE FROM research r WHERE r.title = :OLD.title;
+        DELETE FROM customers c WHERE c.title = :OLD.CUSTOMER_TITLE;
     END IF;
 END;
 -------------------------------------------FINISH_TASK_6----------------------------------------------------------------

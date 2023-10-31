@@ -144,6 +144,8 @@ CREATE OR REPLACE PACKAGE BODY lab_4 AS
     BEGIN
         IF is_valid_species_type(in_target_species) THEN
             SELECT spec_no INTO l_target_spec_no FROM species WHERE spec_name = in_target_species;
+            dbms_output.put_line('Species type: ' || in_target_species);
+            dbms_output.put_line('Species number: ' || l_target_spec_no);
             OPEN c_crops_spec_rsr_res;
             LOOP
                 FETCH c_crops_spec_rsr_res INTO r_crop_spec_rsr_res;
@@ -151,11 +153,17 @@ CREATE OR REPLACE PACKAGE BODY lab_4 AS
                 IF r_crop_spec_rsr_res.rsr_result IS NULL THEN
                     t_null_res_result.EXTEND;
                     t_null_res_result(t_null_res_result.LAST) := r_crop_spec_rsr_res.spec_no;
+                    dbms_output.put_line('Add: ' || r_crop_spec_rsr_res.spec_no ||
+                                         ' into null_res_result nested table');
                 ELSE
                     t_NOT_null_res_result.EXTEND;
                     t_NOT_null_res_result(t_NOT_null_res_result.LAST) := r_crop_spec_rsr_res.spec_no;
+                    dbms_output.put_line('Add: ' || r_crop_spec_rsr_res.spec_no ||
+                                         ' into NOT_null_res_result nested table');
                 END IF;
             END LOOP;
+            dbms_output.put_line('Null collection size: ' || t_null_res_result.COUNT);
+            dbms_output.put_line('NOT Null collection size: ' || t_NOT_null_res_result.COUNT);
             CLOSE c_crops_spec_rsr_res;
         ELSE
             RAISE e_bad_species_name;
@@ -178,8 +186,11 @@ CREATE OR REPLACE PACKAGE BODY lab_4 AS
                     END IF;
                 END IF;
                 UPDATE crops SET spec_no = l_rand_spec_no WHERE brk_no = rec_crop.brk_no;
+                dbms_output.put_line('Update crop with brk_no: ' || rec_crop.brk_no || ' with spec_no: ' ||
+                                     l_rand_spec_no);
             END LOOP;
         DELETE FROM species WHERE spec_no = l_target_spec_no;
+        dbms_output.put_line('Delete from species record with spec_no: ' || l_target_spec_no);
         COMMIT;
     EXCEPTION
         WHEN
@@ -202,6 +213,5 @@ BEGIN
     dbms_output.put_line(lab_4.COUNT_EMP_BY(in_edu_type => 'бакалавр'));
     dbms_output.put_line(lab_4.COUNT_EMP_BY(4));
 
-    -- todo: add put_line more
     lab_4.eradicate_species('груша');
 END;
